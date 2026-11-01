@@ -128,6 +128,23 @@ Set-Location ..
 docker compose down
 ```
 
+### Apply database migrations
+
+The API image includes Alembic. Start the Compose services from the repository root, then apply the schema migration:
+
+```powershell
+docker compose up -d --build
+docker compose exec api alembic upgrade head
+```
+
+For a backend running directly in the virtual environment, run the migration from `backend\` after setting the PostgreSQL environment variables from the direct backend setup above:
+
+```powershell
+alembic upgrade head
+```
+
+Alembic reads the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, and `POSTGRES_PORT` settings as the API. To check the current revision, run `alembic current` from `backend\`. New schema changes should be added as Alembic revisions; do not use `Base.metadata.create_all()` in application startup.
+
 ## System architecture
 
 <img width="722" height="731" alt="DataPulse system architecture" src="https://github.com/user-attachments/assets/e36bd943-9d33-4278-9744-a607ca0c8a63" />
