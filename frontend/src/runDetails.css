@@ -1,0 +1,201 @@
+.run-link {
+  display: block;
+  max-width: 320px;
+  padding: 0;
+  overflow: hidden;
+  color: #087e82;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-link:hover { color: #075e63; text-decoration: underline; }
+.run-link:focus-visible, .close-button:focus-visible {
+  outline: 3px solid #14878a55;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: #102c3b70;
+  animation: backdrop-in 150ms ease-out;
+}
+
+.details-drawer {
+  width: min(520px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 30px clamp(22px, 4vw, 38px);
+  color: #152b3b;
+  background: #fff;
+  box-shadow: -16px 0 48px #0d27352b;
+  animation: drawer-in 180ms ease-out;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e7edf1;
+}
+
+.drawer-header .eyebrow { margin-bottom: 7px; }
+.drawer-header h2 {
+  margin: 0;
+  color: #103344;
+  font-family: Manrope, sans-serif;
+  font-size: 25px;
+  letter-spacing: -0.7px;
+}
+
+.close-button {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 3px;
+  color: #627681;
+  background: #f5f8fa;
+  border: 1px solid #e3ebee;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.close-button:hover { color: #173d4c; background: #edf4f5; }
+
+.detail-state {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  color: #748893;
+  font-size: 14px;
+}
+
+.detail-error {
+  margin-top: 24px;
+  padding: 18px;
+  color: #603a36;
+  background: #fff5f3;
+  border: 1px solid #f3d8d3;
+  border-radius: 12px;
+}
+
+.detail-error strong { font-size: 14px; }
+.detail-error p { margin: 7px 0 15px; color: #80635f; font-size: 13px; line-height: 1.5; }
+
+.detail-content { padding-top: 25px; }
+.detail-pipeline {
+  margin-bottom: 24px;
+  color: #244755;
+  font-family: Manrope, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid #e9eef1;
+  border-left: 1px solid #e9eef1;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.detail-grid > div {
+  min-height: 86px;
+  padding: 15px;
+  border-right: 1px solid #e9eef1;
+  border-bottom: 1px solid #e9eef1;
+}
+
+.detail-grid dt {
+  margin-bottom: 9px;
+  color: #83939e;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.detail-grid dd {
+  margin: 0;
+  color: #294654;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-card {
+  margin-top: 24px;
+  padding: 18px;
+  background: #fff5f3;
+  border: 1px solid #f3d8d3;
+  border-left: 3px solid #d9514d;
+  border-radius: 10px;
+}
+
+.diagnostic-card h3 {
+  margin: 0 0 10px;
+  color: #943e39;
+  font-family: Manrope, sans-serif;
+  font-size: 14px;
+}
+
+.diagnostic-card p {
+  margin: 0;
+  color: #6f4541;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.no-diagnostic {
+  margin: 22px 0 0;
+  padding: 15px 16px;
+  color: #527064;
+  background: #f0f8f3;
+  border: 1px solid #dceee2;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(24px); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 520px) {
+  .details-drawer { padding: 23px 18px; }
+  .detail-grid > div { padding: 12px; }
+  .detail-grid dd { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-backdrop, .details-drawer { animation: none; }
+}
