@@ -1,4 +1,4 @@
-"""Data helpers for loading and presenting individual pipeline runs."""
+/** Data helpers for loading and presenting individual pipeline runs. */
 
 export async function fetchPipelineRun(apiBaseUrl, runId, { signal, fetchImpl = fetch } = {}) {
   const baseUrl = apiBaseUrl.replace(/\/+$/, '');
