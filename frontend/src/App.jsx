@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { fetchPipelineRun, getFailureDiagnostic } from './runDetails';
+import { fetchPipelineHealth, getPipelineHealthMetrics } from './healthSummary';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const PAGE_SIZE = 10;
@@ -20,6 +21,15 @@ function StatusBadge({ status }) {
   return <span className={`status-badge status-${normalized}`}>{normalized}</span>;
 }
 
+function HealthMetric({ label, value, tone }) {
+  return (
+    <div className={`health-metric ${tone || ''}`}>
+      <span>{label}</span>
+      <strong>{Number(value || 0).toLocaleString()}</strong>
+    </div>
+  );
+}
+
 export default function App() {
   const [pipelineName, setPipelineName] = useState('');
   const [status, setStatus] = useState('');
@@ -34,6 +44,10 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detailReloadToken, setDetailReloadToken] = useState(0);
+  const [healthSummaries, setHealthSummaries] = useState([]);
+  const [healthLoading, setHealthLoading] = useState(true);
+  const [healthError, setHealthError] = useState('');
+  const [healthReloadToken, setHealthReloadToken] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,6 +93,26 @@ export default function App() {
   }, [pipelineName, status, page, reloadToken]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    setHealthLoading(true);
+    setHealthError('');
+
+    fetchPipelineHealth(API_BASE_URL, { signal: controller.signal })
+      .then((summaries) => setHealthSummaries(summaries))
+      .catch((requestError) => {
+        if (requestError.name !== 'AbortError') {
+          setHealthError(requestError.message || 'Could not load pipeline health.');
+          setHealthSummaries([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setHealthLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [healthReloadToken]);
+
+  useEffect(() => {
     if (selectedRunId === null) return undefined;
 
     const controller = new AbortController();
@@ -121,6 +155,14 @@ export default function App() {
     setPage(0);
   }
 
+  function viewPipelineHistory(name) {
+    setPipelineName(name);
+    setStatus('');
+    setPage(0);
+  }
+
+  const healthMetrics = getPipelineHealthMetrics(healthSummaries);
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -135,13 +177,76 @@ export default function App() {
         <div className="page-heading">
           <div>
             <p className="eyebrow">OBSERVABILITY</p>
-            <h1>Pipeline runs</h1>
-            <p className="subtitle">Review recent executions and spot failures quickly.</p>
+            <h1>Pipeline overview</h1>
+            <p className="subtitle">Monitor pipeline health, then inspect the run history.</p>
           </div>
           <div className="live-indicator"><span /> Run history</div>
         </div>
 
-        <section className="history-card" aria-labelledby="history-title">
+        <section className="health-section" aria-labelledby="health-title">
+          <div className="health-heading">
+            <div>
+              <p className="eyebrow">AT A GLANCE</p>
+              <h2 id="health-title">Pipeline health</h2>
+              <p>Latest run status and execution totals for each pipeline.</p>
+            </div>
+            {!healthLoading && !healthError && healthSummaries.length > 0 && (
+              <div className="health-totals" aria-label="Overall pipeline totals">
+                <span><strong>{healthMetrics.pipelineCount}</strong> pipelines</span>
+                <span className="total-failed"><strong>{healthMetrics.failedRuns}</strong> failed</span>
+                <span className="total-running"><strong>{healthMetrics.runningRuns}</strong> running</span>
+              </div>
+            )}
+          </div>
+
+          {healthLoading ? (
+            <div className="health-state" role="status">Loading pipeline health…</div>
+          ) : healthError ? (
+            <div className="health-error" role="alert">
+              <div>
+                <strong>Couldn’t load pipeline health</strong>
+                <p>{healthError}</p>
+              </div>
+              <button className="button secondary" onClick={() => setHealthReloadToken((value) => value + 1)}>
+                Try again
+              </button>
+            </div>
+          ) : healthSummaries.length === 0 ? (
+            <div className="health-state health-empty">
+              <strong>No pipeline history yet</strong>
+              <span>Run a pipeline to see its health summary here.</span>
+            </div>
+          ) : (
+            <div className="health-grid">
+              {healthSummaries.map((summary) => (
+                <article className="health-card" key={summary.pipeline_name}>
+                  <div className="health-card-heading">
+                    <div>
+                      <h3>{summary.pipeline_name}</h3>
+                      <p>Latest run · {formatDate(summary.latest_run_at)}</p>
+                    </div>
+                    <StatusBadge status={summary.latest_status} />
+                  </div>
+                  <div className="health-metrics">
+                    <HealthMetric label="Total" value={summary.total_runs} />
+                    <HealthMetric label="Successful" value={summary.successful_runs} tone="metric-success" />
+                    <HealthMetric label="Failed" value={summary.failed_runs} tone="metric-failed" />
+                    <HealthMetric label="Running" value={summary.running_runs} tone="metric-running" />
+                  </div>
+                  <a
+                    className="health-history-link"
+                    href="#execution-history"
+                    onClick={() => viewPipelineHistory(summary.pipeline_name)}
+                  >
+                    View run history <span aria-hidden="true">→</span>
+                  </a>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="history-card" id="execution-history" aria-labelledby="history-title">
           <div className="card-heading">
             <div>
               <h2 id="history-title">Execution history</h2>
