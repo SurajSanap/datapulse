@@ -1,4 +1,7 @@
+import os
+
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.pipeline_health import router as pipeline_health_router
@@ -6,6 +9,22 @@ from app.api.pipeline_runs import router as pipeline_runs_router
 from app.db.session import check_database_connection
 
 app = FastAPI(title="DataPulse API", version="0.2.0")
+
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
 app.include_router(pipeline_runs_router)
 app.include_router(pipeline_health_router)
 
