@@ -12,7 +12,7 @@ services:
     volumes:
       - datapulse_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $__{POSTGRES_USER} -d $__{POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -32,6 +32,7 @@ services:
       POSTGRES_PORT: 5432
       OPEN_METEO_LATITUDE: ${OPEN_METEO_LATITUDE:-28.6139}
       OPEN_METEO_LONGITUDE: ${OPEN_METEO_LONGITUDE:-77.2090}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
