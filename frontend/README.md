@@ -7,7 +7,7 @@ The React/Vite dashboard reads run history from the FastAPI service at `VITE_API
 From the repository root, start PostgreSQL and the API, then apply the migrations:
 
 ```powershell
-docker compose up --build -d
+docker compose up --build -d db api
 docker compose exec api alembic upgrade head
 ```
 
@@ -33,6 +33,10 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Vite reads `.env.local` and passes `VITE_API_BASE_URL` to the dashboard. Change that value if the API is running at a different URL, then restart Vite.
+
+## Serve the production frontend container
+
+From the repository root, the default `docker compose up --build -d` command builds and starts the frontend, API, and database. After applying database migrations, open [http://localhost:3000](http://localhost:3000). The frontend container serves the static Vite build with Nginx and proxies `/api` requests to the Compose `api` service. To change the browser-visible API base path, set `VITE_API_BASE_URL` in the root `.env` before building; it is embedded in the frontend at build time and must be a URL or path the user's browser can reach.
 
 For a backend started directly from `backend/`, configure allowed origins before starting Uvicorn:
 

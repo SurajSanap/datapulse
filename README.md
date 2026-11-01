@@ -44,6 +44,8 @@ The first command creates `.env` from the tracked example only when `.env` does 
 
 `docker compose config` validates the Compose file and resolved environment before starting. The API container waits for the PostgreSQL health check before it starts.
 
+The dashboard is served by the frontend container at [http://localhost:3000](http://localhost:3000). It sends API requests through the frontend's same-origin `/api` proxy, so the browser does not need to resolve the internal Compose service name. The API remains available directly at `http://localhost:8000` for its docs and health endpoints.
+
 Check service status and follow logs:
 
 ```powershell
@@ -62,7 +64,7 @@ Invoke-RestMethod http://localhost:8000/health/ready
 
 Liveness should return `status: ok`. Readiness should return `status: ready` and `database: connected`. A readiness failure means the API cannot reach PostgreSQL yet. The interactive API docs are at [http://localhost:8000/docs](http://localhost:8000/docs).
 
-The default host ports are API `8000` and PostgreSQL `5432`. If you change `API_PORT` or `POSTGRES_PUBLISHED_PORT` in `.env`, use the corresponding API port when testing the endpoints.
+The default host ports are frontend `3000`, API `8000`, and PostgreSQL `5432`. If you change `FRONTEND_PORT`, `API_PORT`, or `POSTGRES_PUBLISHED_PORT` in `.env`, use the corresponding port when opening the dashboard or testing the endpoints.
 
 ### Stop the services
 
