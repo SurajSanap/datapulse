@@ -1,4 +1,4 @@
-"""Focused API tests for listing pipeline runs."""
+"""Focused API tests for listing and retrieving pipeline runs."""
 
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -92,6 +92,26 @@ class PipelineRunsApiTests(unittest.TestCase):
     def test_rejects_out_of_range_pagination(self) -> None:
         self.assertEqual(self.client.get("/pipeline-runs", params={"limit": 101}).status_code, 422)
         self.assertEqual(self.client.get("/pipeline-runs", params={"offset": -1}).status_code, 422)
+
+    def test_retrieves_pipeline_run_details(self) -> None:
+        listed = self.client.get("/pipeline-runs", params={"status": "failed"}).json()
+        run_id = listed[0]["id"]
+
+        response = self.client.get(f"/pipeline-runs/{run_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["pipeline_name"], "open_meteo_weather")
+        self.assertEqual(response.json()["status"], "failed")
+        self.assertEqual(response.json()["records_processed"], 0)
+        self.assertEqual(response.json()["error_message"], "upstream unavailable")
+        self.assertIn("started_at", response.json())
+        self.assertIn("completed_at", response.json())
+
+    def test_returns_404_for_unknown_pipeline_run(self) -> None:
+        response = self.client.get("/pipeline-runs/999")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Pipeline run 999 not found")
 
 
 if __name__ == "__main__":
