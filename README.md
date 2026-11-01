@@ -147,6 +147,26 @@ alembic upgrade head
 
 Alembic reads the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, and `POSTGRES_PORT` settings as the API. To check the current revision, run `alembic current` from `backend\`. New schema changes should be added as Alembic revisions; do not use `Base.metadata.create_all()` in application startup.
 
+## Continuous integration
+
+GitHub Actions runs backend tests and frontend checks for every pull request targeting `main` and every push to `main`. The backend job uses Python 3.12 and runs the `unittest` suite without connecting to PostgreSQL. The frontend job uses Node.js 22, checks for high or critical npm advisories, runs the Node test suite, and creates the Vite production build. Neither job requires production credentials.
+
+Run the same checks locally from the repository root:
+
+```powershell
+Push-Location .\backend
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -p "test_*.py"
+Pop-Location
+
+Push-Location .\frontend
+npm ci
+npm audit --audit-level=high
+npm test
+npm run build
+Pop-Location
+```
+
 ## System architecture
 
 <img width="722" height="731" alt="DataPulse system architecture" src="https://github.com/user-attachments/assets/e36bd943-9d33-4278-9744-a607ca0c8a63" />
