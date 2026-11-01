@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: stg_weather_observations
+    description: >
+      Typed staging view of hourly Open-Meteo forecast snapshots. Each row is an
+      observation persisted by one ingestion run; repeated location/hour rows
+      from different runs are retained.
+    columns:
+      - name: observation_id
+        description: "Unique database identifier for this persisted observation."
+        data_type: integer
+        tests:
+          - unique
+          - not_null
+      - name: latitude
+        description: "Latitude returned for the requested location, in decimal degrees."
+        data_type: double precision
+        tests:
+          - not_null
+      - name: longitude
+        description: "Longitude returned for the requested location, in decimal degrees."
+        data_type: double precision
+        tests:
+          - not_null
+      - name: observed_at_utc
+        description: "UTC hour for which the forecast values are valid."
+        data_type: timestamp with time zone
+        tests:
+          - not_null
+      - name: temperature_c
+        description: "Air temperature at two meters, in degrees Celsius; nullable when unavailable."
+        data_type: double precision
+      - name: relative_humidity_pct
+        description: "Relative humidity at two meters, in percent; nullable when unavailable."
+        data_type: integer
+      - name: precipitation_mm
+        description: "Precipitation during the preceding hour, in millimeters; nullable when unavailable."
+        data_type: double precision
+      - name: wind_speed_kmh
+        description: "Wind speed at ten meters, in kilometers per hour; nullable when unavailable."
+        data_type: double precision
+      - name: raw_payload
+        description: "Original Open-Meteo hourly values and source units for this row."
+        data_type: json
+        tests:
+          - not_null
+      - name: ingested_at
+        description: "Timestamp when this forecast snapshot was persisted."
+        data_type: timestamp with time zone
+        tests:
+          - not_null

@@ -64,3 +64,16 @@ The `models/sources.yml` file documents `public.weather_observations`, including
 select *
 from {{ source('weather', 'weather_observations') }}
 ```
+
+
+## Staging model
+
+`models/staging/stg_weather_observations.sql` selects the declared Open-Meteo source and gives its columns stable analytics names and explicit SQL types. It preserves the raw JSON payload and keeps each ingested forecast snapshot; it does not collapse repeated observations from different runs.
+
+The staging properties in `models/staging/schema.yml` document the output types and descriptions. They test the observation ID for uniqueness and required fields for nulls. `tests/weather_measurement_ranges.sql` checks humidity stays within 0–100 percent and precipitation and wind speed are nonnegative. Weather measures that are nullable in the source remain nullable.
+
+After applying backend migrations and setting the connection environment, run the model and its tests from `dbt/\`:
+
+```powershell
+dbt build --profiles-dir .
+```
