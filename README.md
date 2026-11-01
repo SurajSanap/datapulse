@@ -184,3 +184,21 @@ datapulse/
 ├── .env.example
 └── README.md
 ```
+
+### Run the Open-Meteo weather pipeline
+
+The pipeline fetches one day of hourly weather for the configured coordinates, stores each observation and its source payload, and records the run outcome in `pipeline_runs`. The defaults point to Delhi. Set `OPEN_METEO_LATITUDE` and `OPEN_METEO_LONGITUDE` in `.env` to change the location; the Compose API service passes these values to the pipeline.
+
+Apply database migrations first, then run the pipeline from the repository root:
+
+```powershell
+docker compose exec api python -m app.ingestion.weather
+```
+
+For a backend running directly in the virtual environment, run the same command from `backend\` after applying migrations:
+
+```powershell
+python -m app.ingestion.weather
+```
+
+The command prints the run ID, status, and number of persisted observations. Each invocation creates a new pipeline run and a new forecast snapshot.

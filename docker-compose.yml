@@ -30,6 +30,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-datapulse}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      OPEN_METEO_LATITUDE: ${OPEN_METEO_LATITUDE:-28.6139}
+      OPEN_METEO_LONGITUDE: ${OPEN_METEO_LONGITUDE:-77.2090}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
