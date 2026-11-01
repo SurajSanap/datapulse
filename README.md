@@ -202,3 +202,8 @@ python -m app.ingestion.weather
 ```
 
 The command prints the run ID, status, and number of persisted observations. Each invocation creates a new pipeline run and a new forecast snapshot.
+
+
+### Configure and validate dbt
+
+The dbt project lives in `dbt/README.md`. Install its adapter with `python -m pip install -r requirements.txt` from `dbt/\`, set the PostgreSQL connection variables in your PowerShell session, then run `dbt debug --profiles-dir .` from `dbt/\`. The checked-in `dbt/profiles.yml` reads those environment variables and contains no credentials.

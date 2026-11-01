@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: weather
+    description: "Hourly weather forecast snapshots ingested from the Open-Meteo API."
+    database: "{{ env_var('POSTGRES_DB', 'datapulse') }}"
+    schema: public
+    tables:
+      - name: weather_observations
+        description: >
+          One row per hourly forecast value per pipeline execution. Repeated runs
+          intentionally create additional snapshots for the same location and hour.
+        columns:
+          - name: id
+            description: "Surrogate primary key for the stored observation."
+            data_type: integer
+          - name: latitude
+            description: "Latitude returned by Open-Meteo for the requested location."
+            data_type: double precision
+          - name: longitude
+            description: "Longitude returned by Open-Meteo for the requested location."
+            data_type: double precision
+          - name: observed_at
+            description: "UTC hour for which this forecast observation is valid."
+            data_type: timestamp with time zone
+          - name: temperature_c
+            description: "Air temperature at two meters, in degrees Celsius."
+            data_type: double precision
+          - name: relative_humidity_pct
+            description: "Relative humidity at two meters, as a percentage."
+            data_type: integer
+          - name: precipitation_mm
+            description: "Precipitation during the preceding hour, in millimeters."
+            data_type: double precision
+          - name: wind_speed_kmh
+            description: "Wind speed at ten meters, in kilometers per hour."
+            data_type: double precision
+          - name: raw_payload
+            description: "JSON object containing the source timestamp, hourly values, and units."
+            data_type: json
+          - name: created_at
+            description: "Timestamp when this observation snapshot was persisted."
+            data_type: timestamp with time zone
