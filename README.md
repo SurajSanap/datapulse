@@ -21,15 +21,21 @@ The API container waits until PostgreSQL passes its health check before starting
 Once the containers are running:
 
 - API: http://localhost:8000
-- API health endpoint: http://localhost:8000/health
+- API liveness check: http://localhost:8000/health
+- API readiness check (includes PostgreSQL connectivity): http://localhost:8000/health/ready
 - Interactive API docs: http://localhost:8000/docs
 - PostgreSQL: localhost:5432
+
+The liveness endpoint reports whether the API process is responding. The readiness endpoint runs a lightweight `SELECT 1` query against PostgreSQL and returns HTTP 503 if the database cannot be reached.
 
 The default credentials in `.env.example` are for local development only. Change them for any shared or deployed environment. The root `.env` file is ignored by Git; keep secrets out of commits.
 
 ### Useful commands
 
 ```bash
+# Validate the Compose configuration
+docker compose config
+
 # Start in the background
 docker compose up --build -d
 
