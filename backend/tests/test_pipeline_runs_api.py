@@ -1,4 +1,4 @@
-"""Focused API tests for listing and retrieving pipeline runs."""
+"""Focused API tests for pipeline history and health summaries."""
 
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -112,6 +112,41 @@ class PipelineRunsApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["detail"], "Pipeline run 999 not found")
+
+    def test_pipeline_health_summarizes_mixed_statuses_in_stable_order(self) -> None:
+        response = self.client.get("/pipeline-health")
+
+        self.assertEqual(response.status_code, 200)
+        summaries = response.json()
+        self.assertEqual(
+            [summary["pipeline_name"] for summary in summaries],
+            ["open_meteo_weather", "other_pipeline"],
+        )
+
+        weather = summaries[0]
+        self.assertEqual(weather["total_runs"], 2)
+        self.assertEqual(weather["successful_runs"], 1)
+        self.assertEqual(weather["failed_runs"], 1)
+        self.assertEqual(weather["running_runs"], 0)
+        self.assertEqual(weather["latest_status"], "failed")
+        self.assertIsNotNone(weather["latest_run_at"])
+
+        other = summaries[1]
+        self.assertEqual(other["total_runs"], 1)
+        self.assertEqual(other["successful_runs"], 0)
+        self.assertEqual(other["failed_runs"], 0)
+        self.assertEqual(other["running_runs"], 1)
+        self.assertEqual(other["latest_status"], "running")
+
+    def test_pipeline_health_returns_empty_list_without_run_history(self) -> None:
+        with self.SessionTest() as db:
+            db.query(PipelineRun).delete()
+            db.commit()
+
+        response = self.client.get("/pipeline-health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
 
 
 if __name__ == "__main__":
