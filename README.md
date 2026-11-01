@@ -2,57 +2,131 @@
 
 A data observability platform for ingesting, transforming, validating, and monitoring real-world data pipelines.
 
-## Local development
+## Local development on Windows
+
+Run the commands in this guide in **PowerShell**, from the **repository root**: the `datapulse` folder that contains `docker-compose.yml`, `.env.example`, and this `README.md`. Do not run the Docker Compose commands from `backend\`. If you are not there already, open the repository folder in VS Code and choose **Terminal → New Terminal**, or change to your clone's path:
+
+```powershell
+Set-Location 'C:\path\to\datapulse'
+Get-Location
+Test-Path .\docker-compose.yml
+```
+
+The last command should return `True`.
 
 ### Prerequisites
 
-- Docker Desktop (or Docker Engine) with the Docker Compose plugin
-- Git
+- **Docker Desktop for Windows**, configured to use the **WSL 2 backend**. Start Docker Desktop and wait until its engine is running.
+- **Git for Windows**, to clone the repository.
+- **Python 3.12** and a virtual environment are optional for running the backend directly on Windows instead of in a container.
+- For the direct local backend option, PostgreSQL 16 must be available on `localhost:5432`. You can install PostgreSQL locally, or use Docker Desktop to run only the database.
 
-### Start the API and PostgreSQL
+Open a new PowerShell window after installing Docker Desktop, then confirm Docker and Compose are available:
 
-```bash
-cp .env.example .env
-docker compose up --build
+```powershell
+docker --version
+docker compose version
 ```
 
-The API container waits until PostgreSQL passes its health check before starting.
+### Configure and start with Docker Compose
 
-Once the containers are running:
+Run these commands from the repository root:
 
-- API: http://localhost:8000
-- API liveness check: http://localhost:8000/health
-- API readiness check (includes PostgreSQL connectivity): http://localhost:8000/health/ready
-- Interactive API docs: http://localhost:8000/docs
-- PostgreSQL: localhost:5432
-
-The liveness endpoint reports whether the API process is responding. The readiness endpoint runs a lightweight `SELECT 1` query against PostgreSQL and returns HTTP 503 if the database cannot be reached.
-
-The default credentials in `.env.example` are for local development only. Change them for any shared or deployed environment. The root `.env` file is ignored by Git; keep secrets out of commits.
-
-### Useful commands
-
-```bash
-# Validate the Compose configuration
+```powershell
+if (-not (Test-Path .env)) {
+    Copy-Item .env.example .env
+}
 docker compose config
-
-# Start in the background
 docker compose up --build -d
-
-# Follow service logs
-docker compose logs -f
-
-# Check service status
-docker compose ps
-
-# Stop containers (keeps database data)
-docker compose down
-
-# Stop containers and delete the local database volume
-docker compose down -v
 ```
 
-PostgreSQL data is stored in the named Docker volume `datapulse_postgres_data`, so it survives a normal `docker compose down`. Use `docker compose down -v` only when you intentionally want to reset the local database.
+The first command creates `.env` from the tracked example only when `.env` does not already exist, so it preserves your existing local settings. Review `.env` if you need to change ports or credentials. The sample credentials are for local development only.
+
+`docker compose config` validates the Compose file and resolved environment before starting. The API container waits for the PostgreSQL health check before it starts.
+
+Check service status and follow logs:
+
+```powershell
+docker compose ps
+docker compose logs -f
+```
+
+Press **Ctrl+C** to stop following logs; this does not stop the services. To inspect just one service, use `docker compose logs -f api` or `docker compose logs -f db`.
+
+Test API liveness and database readiness from PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:8000/health/ready
+```
+
+Liveness should return `status: ok`. Readiness should return `status: ready` and `database: connected`. A readiness failure means the API cannot reach PostgreSQL yet. The interactive API docs are at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+The default host ports are API `8000` and PostgreSQL `5432`. If you change `API_PORT` or `POSTGRES_PUBLISHED_PORT` in `.env`, use the corresponding API port when testing the endpoints.
+
+### Stop the services
+
+From the repository root:
+
+```powershell
+docker compose down
+```
+
+This stops and removes the containers while preserving the database volume. To intentionally delete the local database and all its data as well:
+
+```powershell
+docker compose down --volumes
+```
+
+### Run the backend directly on Windows
+
+This option runs FastAPI in a Python virtual environment. PostgreSQL must still be running and reachable at `localhost:5432`. Either install PostgreSQL 16 locally and create the configured database/user, or start just the Compose database from the repository root:
+
+```powershell
+docker compose up -d db
+```
+
+Then switch into the backend directory, create and activate a virtual environment, and install the dependencies:
+
+```powershell
+Set-Location .\backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If PowerShell blocks virtual environment activation, allow scripts for this terminal session and activate again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Set the same development connection values used by `.env.example` for this PowerShell session, then start the API:
+
+```powershell
+$env:POSTGRES_USER = 'datapulse'
+$env:POSTGRES_PASSWORD = 'datapulse_dev_password'
+$env:POSTGRES_DB = 'datapulse'
+$env:POSTGRES_HOST = 'localhost'
+$env:POSTGRES_PORT = '5432'
+python -m uvicorn app.main:app --reload
+```
+
+The API is now available at `http://localhost:8000`. In another PowerShell window, test it with:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:8000/health/ready
+```
+
+Stop the local API with **Ctrl+C**. If you started the database with Compose, return to the repository root before stopping it:
+
+```powershell
+Set-Location ..
+docker compose down
+```
 
 ## System architecture
 
@@ -73,6 +147,7 @@ datapulse/
 │   │   ├── db/
 │   │   ├── models/
 │   │   └── schemas/
+│   ├── Dockerfile
 │   └── requirements.txt
 ├── ingestion/
 │   ├── sources/
