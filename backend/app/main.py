@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.api.pipeline_runs import router as pipeline_runs_router
 from app.db.session import check_database_connection
 
 app = FastAPI(title="DataPulse API", version="0.2.0")
+app.include_router(pipeline_runs_router)
 
 
 @app.get("/")
