@@ -27,11 +27,18 @@ In a new PowerShell terminal from the repository root:
 
 ```powershell
 Set-Location .\frontend
-Copy-Item .env.example .env.local
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
 npm ci
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Vite reads `.env.local` and passes `VITE_API_BASE_URL` to the dashboard. Change that value if the API is running at a different URL, then restart Vite.
 
-For a backend started directly from `backend/`, set `CORS_ORIGINS` in that PowerShell session before starting Uvicorn. The default Vite origins are already allowed.
+For a backend started directly from `backend/`, configure allowed origins before starting Uvicorn:
+
+```powershell
+$env:CORS_ORIGINS = 'http://localhost:3000,http://127.0.0.1:3000'
+python -m uvicorn app.main:app --reload
+```
+
+The two default Vite origins are already allowed when `CORS_ORIGINS` is unset.
