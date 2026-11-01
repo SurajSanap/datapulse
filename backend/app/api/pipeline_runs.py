@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -42,3 +42,15 @@ def list_pipeline_runs(
         .offset(offset)
     )
     return list(db.scalars(statement).all())
+
+
+@router.get("/pipeline-runs/{run_id}", response_model=PipelineRunRead)
+def get_pipeline_run(run_id: int, db: Session = Depends(get_db)) -> PipelineRun:
+    """Return one pipeline run or 404 when the ID is unknown."""
+    run = db.get(PipelineRun, run_id)
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Pipeline run {run_id} not found",
+        )
+    return run
