@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { fetchPipelineRun, getFailureDiagnostic } from './runDetails';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const PAGE_SIZE = 10;
 
@@ -27,6 +29,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadToken, setReloadToken] = useState(0);
+  const [selectedRunId, setSelectedRunId] = useState(null);
+  const [selectedRun, setSelectedRun] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,6 +78,39 @@ export default function App() {
     return () => controller.abort();
   }, [pipelineName, status, page, reloadToken]);
 
+  useEffect(() => {
+    if (selectedRunId === null) return undefined;
+
+    const controller = new AbortController();
+    setSelectedRun(null);
+    setDetailError('');
+    setDetailLoading(true);
+
+    fetchPipelineRun(API_BASE_URL, selectedRunId, { signal: controller.signal })
+      .then((run) => setSelectedRun(run))
+      .catch((requestError) => {
+        if (requestError.name !== 'AbortError') {
+          setDetailError(requestError.message || 'Could not load this pipeline run.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDetailLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [selectedRunId, detailReloadToken]);
+
+  useEffect(() => {
+    if (selectedRunId === null) return undefined;
+
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') setSelectedRunId(null);
+    }
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedRunId]);
+
   function updatePipelineName(event) {
     setPipelineName(event.target.value);
     setPage(0);
@@ -105,7 +145,7 @@ export default function App() {
           <div className="card-heading">
             <div>
               <h2 id="history-title">Execution history</h2>
-              <p>Filter runs by pipeline or current status.</p>
+              <p>Filter runs by pipeline or current status. Select a run to inspect its details.</p>
             </div>
           </div>
 
@@ -171,7 +211,13 @@ export default function App() {
                     ) : runs.map((run) => (
                       <tr key={run.id}>
                         <td>
-                          <span className="pipeline-name">{run.pipeline_name}</span>
+                          <button
+                            className="run-link"
+                            onClick={() => setSelectedRunId(run.id)}
+                            aria-label={`View details for ${run.pipeline_name} run ${run.id}`}
+                          >
+                            {run.pipeline_name}
+                          </button>
                           <span className="run-id">Run #{run.id}</span>
                         </td>
                         <td><StatusBadge status={run.status} /></td>
@@ -222,6 +268,73 @@ export default function App() {
         </section>
         <p className="api-note">Connected to <code>{API_BASE_URL}</code></p>
       </section>
+
+      {selectedRunId !== null && (
+        <div
+          className="drawer-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedRunId(null);
+          }}
+        >
+          <section className="details-drawer" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+            <header className="drawer-header">
+              <div>
+                <p className="eyebrow">EXECUTION DETAILS</p>
+                <h2 id="detail-title">Run #{selectedRunId}</h2>
+              </div>
+              <button className="close-button" onClick={() => setSelectedRunId(null)} aria-label="Close run details">
+                ×
+              </button>
+            </header>
+
+            {detailLoading ? (
+              <div className="detail-state">Loading run details…</div>
+            ) : detailError ? (
+              <div className="detail-error" role="alert">
+                <strong>Run details unavailable</strong>
+                <p>{detailError}</p>
+                <button
+                  className="button secondary"
+                  onClick={() => setDetailReloadToken((value) => value + 1)}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : selectedRun && (
+              <div className="detail-content">
+                <p className="detail-pipeline">{selectedRun.pipeline_name}</p>
+                <dl className="detail-grid">
+                  <div>
+                    <dt>Status</dt>
+                    <dd><StatusBadge status={selectedRun.status} /></dd>
+                  </div>
+                  <div>
+                    <dt>Records processed</dt>
+                    <dd>{Number(selectedRun.records_processed || 0).toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Started</dt>
+                    <dd>{formatDate(selectedRun.started_at)}</dd>
+                  </div>
+                  <div>
+                    <dt>Completed</dt>
+                    <dd>{formatDate(selectedRun.completed_at)}</dd>
+                  </div>
+                </dl>
+
+                {selectedRun.status === 'failed' ? (
+                  <section className="diagnostic-card" aria-labelledby="diagnostic-title">
+                    <h3 id="diagnostic-title">Failure diagnostic</h3>
+                    <p>{getFailureDiagnostic(selectedRun)}</p>
+                  </section>
+                ) : (
+                  <p className="no-diagnostic">No failure message was recorded for this run.</p>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
     </main>
   );
 }
