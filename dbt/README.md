@@ -77,3 +77,10 @@ After applying backend migrations and setting the connection environment, run th
 ```powershell
 dbt build --profiles-dir .
 ```
+
+
+## Curated hourly forecast
+
+`models/marts/fct_weather_hourly.sql` exposes one row per latitude, longitude, and UTC forecast hour. When ingestion runs have stored multiple snapshots for the same grain, the model keeps the latest `ingested_at`. If timestamps tie, it uses the higher source observation ID for a stable choice.
+
+The curated model includes the weather measures and `ingested_at` so downstream analytics can see both forecast values and when the selected snapshot arrived. Its schema documents the model and tests required fields. The singular test `tests/weather_hourly_grain_is_unique.sql` verifies that the location/hour grain contains no duplicates.
