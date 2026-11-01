@@ -17,3 +17,15 @@ class PipelineRunRead(BaseModel):
     completed_at: datetime | None
     records_processed: int
     error_message: str | None
+
+
+class PipelineHealthSummary(BaseModel):
+    """Aggregate run health and latest execution for one pipeline."""
+
+    pipeline_name: str
+    total_runs: int
+    successful_runs: int
+    failed_runs: int
+    running_runs: int
+    latest_run_at: datetime
+    latest_status: str
