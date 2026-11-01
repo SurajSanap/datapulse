@@ -147,7 +147,7 @@ Alembic reads the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POS
 
 ## Continuous integration
 
-GitHub Actions runs backend tests and frontend checks for every pull request targeting `main` and every push to `main`. The backend job uses Python 3.12 and runs the `unittest` suite without connecting to PostgreSQL. The frontend job uses Node.js 22, runs the Node test suite, and creates the Vite production build. Neither job requires production credentials.
+GitHub Actions runs backend tests and frontend checks for every pull request targeting `main` and every push to `main`. The backend job uses Python 3.12 and runs the `unittest` suite without connecting to PostgreSQL. The frontend job uses Node.js 22, checks for high or critical npm advisories, runs the Node test suite, and creates the Vite production build. Neither job requires production credentials.
 
 Run the same checks locally from the repository root:
 
@@ -159,6 +159,7 @@ Pop-Location
 
 Push-Location .\frontend
 npm ci
+npm audit --audit-level=high
 npm test
 npm run build
 Pop-Location
