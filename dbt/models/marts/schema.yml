@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: fct_weather_hourly
+    description: >
+      Latest ingested Open-Meteo forecast snapshot for each coordinate and
+      forecast hour. Repeated ingestion snapshots are reduced by keeping the
+      newest ingested_at value, with source_observation_id as a deterministic
+      tie-breaker.
+    columns:
+      - name: source_observation_id
+        description: "Observation ID of the source snapshot retained for this location and hour."
+        data_type: integer
+        tests:
+          - unique
+          - not_null
+      - name: latitude
+        description: "Latitude of the forecast location, in decimal degrees."
+        data_type: double precision
+        tests:
+          - not_null
+      - name: longitude
+        description: "Longitude of the forecast location, in decimal degrees."
+        data_type: double precision
+        tests:
+          - not_null
+      - name: observed_at_utc
+        description: "UTC hour for which the forecast values are valid."
+        data_type: timestamp with time zone
+        tests:
+          - not_null
+      - name: temperature_c
+        description: "Air temperature at two meters, in degrees Celsius."
+        data_type: double precision
+      - name: relative_humidity_pct
+        description: "Relative humidity at two meters, in percent."
+        data_type: integer
+      - name: precipitation_mm
+        description: "Precipitation during the preceding hour, in millimeters."
+        data_type: double precision
+      - name: wind_speed_kmh
+        description: "Wind speed at ten meters, in kilometers per hour."
+        data_type: double precision
+      - name: ingested_at
+        description: "Ingestion timestamp for the selected forecast snapshot."
+        data_type: timestamp with time zone
+        tests:
+          - not_null
