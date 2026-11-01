@@ -44,6 +44,8 @@ The first command creates `.env` from the tracked example only when `.env` does 
 
 `docker compose config` validates the Compose file and resolved environment before starting. The API container waits for the PostgreSQL health check before it starts.
 
+The dashboard is served by the frontend container at [http://localhost:3000](http://localhost:3000). It sends API requests through the frontend's same-origin `/api` proxy, so the browser does not need to resolve the internal Compose service name. The API remains available directly at `http://localhost:8000` for its docs and health endpoints.
+
 Check service status and follow logs:
 
 ```powershell
@@ -62,7 +64,7 @@ Invoke-RestMethod http://localhost:8000/health/ready
 
 Liveness should return `status: ok`. Readiness should return `status: ready` and `database: connected`. A readiness failure means the API cannot reach PostgreSQL yet. The interactive API docs are at [http://localhost:8000/docs](http://localhost:8000/docs).
 
-The default host ports are API `8000` and PostgreSQL `5432`. If you change `API_PORT` or `POSTGRES_PUBLISHED_PORT` in `.env`, use the corresponding API port when testing the endpoints.
+The default host ports are frontend `3000`, API `8000`, and PostgreSQL `5432`. If you change `FRONTEND_PORT`, `API_PORT`, or `POSTGRES_PUBLISHED_PORT` in `.env`, use the corresponding port when opening the dashboard or testing the endpoints.
 
 ### Stop the services
 
@@ -144,6 +146,26 @@ alembic upgrade head
 ```
 
 Alembic reads the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, and `POSTGRES_PORT` settings as the API. To check the current revision, run `alembic current` from `backend\`. New schema changes should be added as Alembic revisions; do not use `Base.metadata.create_all()` in application startup.
+
+## Continuous integration
+
+GitHub Actions runs backend tests and frontend checks for every pull request targeting `main` and every push to `main`. The backend job uses Python 3.12 and runs the `unittest` suite without connecting to PostgreSQL. The frontend job uses Node.js 22, checks for high or critical npm advisories, runs the Node test suite, and creates the Vite production build. Neither job requires production credentials.
+
+Run the same checks locally from the repository root:
+
+```powershell
+Push-Location .\backend
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -p "test_*.py"
+Pop-Location
+
+Push-Location .\frontend
+npm ci
+npm audit --audit-level=high
+npm test
+npm run build
+Pop-Location
+```
 
 ## System architecture
 
